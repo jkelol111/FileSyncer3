@@ -19,8 +19,11 @@ def start_thread(function):
 
 # Print message to FileSyncer application message box    
 def print_to_textbox(message):
-    global texbox1
     message_box.insert(END, message + "\n")
+
+# Clear FileSyncer application message box    
+def clear_textbox():
+    message_box.delete('1.0', END)
 
 # Stores the path of a user selected directory to a variable
 def browse_directory(directory_type):
@@ -32,8 +35,11 @@ def browse_directory(directory_type):
         source_directory_path.set(directory_path)
     elif directory_type == "TARGET":
         target_directory_path.set(directory_path)
-    if len(source_directory_path.get()) > 0 and len(target_directory_path.get()) > 0: 
-        sync_file_button.config(state=ACTIVE)
+    if len(source_directory_path.get()) > 0 and len(target_directory_path.get()) > 0:
+        source_directory_exists = os.path.exists(source_directory_path.get()) and os.path.isdir(source_directory_path.get())
+        target_directory_exists = os.path.exists(target_directory_path.get()) and os.path.isdir(target_directory_path.get())
+        if source_directory_exists and target_directory_exists:
+            sync_file_button.config(state=ACTIVE)
 
 # Recursively crawls source directory tree and syncs files and sundirectories with target directory tree        
 def file_sync(source_directory, target_directory):
@@ -71,6 +77,8 @@ def file_desync(target_directory, source_directory):
             
 # Main method - Calls file_sync method on source_directory and file_desync method on target_directory       
 def main():
+
+    clear_textbox()
 
     source_directory = str(source_directory_path.get())
     target_directory = str(target_directory_path.get())
