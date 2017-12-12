@@ -107,10 +107,10 @@ filemenu.add_separator()
 filemenu.add_command(label="Exit", command=root.destroy)
 menubar.add_cascade(label="File", menu=filemenu)
 
-# Sting variable used to hold source directory path
+# String variable used to hold source directory path
 source_directory_path = StringVar()
 
-# Sting variable used to hold target directory path
+# String variable used to hold target directory path
 target_directory_path = StringVar()
 
 # Source Directory browse button
