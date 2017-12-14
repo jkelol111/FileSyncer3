@@ -41,7 +41,7 @@ def browse_directory(directory_type):
         if source_directory_exists and target_directory_exists:
             sync_file_button.config(state=ACTIVE)
 
-# Recursively crawls source directory tree and syncs files and sundirectories with target directory tree        
+# Recursively crawls source directory tree and syncs files and sub-directories with target directory tree        
 def file_sync(source_directory, target_directory):
     for source in glob.glob(os.path.join(source_directory, "*")):
         target = source.replace(source_directory, target_directory)
@@ -59,7 +59,7 @@ def file_sync(source_directory, target_directory):
         except IOError:
             print_to_textbox("IOError, sync failed: " + target)
 
-# Recursively crawls target directory tree and deleted files and sundirectories that are not in source directory tree          
+# Recursively crawls target directory tree and deletes files and sub-directories that are not in source directory tree          
 def file_desync(target_directory, source_directory):
     for target in glob.glob(os.path.join(target_directory, "*")):
         source = target.replace(target_directory, source_directory)
