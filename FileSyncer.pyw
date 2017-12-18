@@ -39,7 +39,7 @@ def center_popup(toplevel):
 def about_popup():
     
     separator = "-------------------------------------------------\n"
-    title_message = "FileSycer\n"
+    title_message = " Title: FileSyncer\n"
     copyright_message = "Copyright (C) 2017 Matthew Gray\n"
     description_message = "Description: Recursively crawls a source directory\n tree and syncs the contents of each subdirectory\n and file with a target directory tree."
     about_message = title_message + separator+ copyright_message + separator + description_message
