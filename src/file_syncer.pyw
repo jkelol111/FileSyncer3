@@ -38,8 +38,8 @@ def center_popup(toplevel):
 # About popup
 def about_popup():
     
-    separator = "-------------------------------------------------\n"
-    title_message = " Title: FileSyncer\n"
+    global separator
+    title_message = "FileSycer\n"
     copyright_message = "Copyright (C) 2017 Matthew Gray\n"
     description_message = "Description: Recursively crawls a source directory\n tree and syncs the contents of each subdirectory\n and file with a target directory tree."
     about_message = title_message + separator+ copyright_message + separator + description_message
@@ -67,6 +67,7 @@ def confirm_popup():
     center_popup(toplevel)
     toplevel.grab_set()
 
+# Starts main thread after confirm button clicked
 def confirm_sync(toplevel):
     toplevel.destroy()
     start_thread(main)
@@ -98,12 +99,15 @@ def file_sync(source_directory, target_directory):
                 else:
                     shutil.copytree(source, target)
                     print_to_textbox("Directory synced: " + target)
+                    print_to_textbox("\n")
             elif os.path.isfile(source):
                 if not os.path.isfile(target) or (os.path.isfile(target) and not filecmp.cmp(source, target, shallow=True)):              
                     shutil.copy(source, target)
                     print_to_textbox("File synced: " + target)
+                    print_to_textbox("\n")
         except IOError:
             print_to_textbox("IOError, sync failed: " + target)
+            print_to_textbox("\n")
 
 # Recursively crawls target directory tree and deletes files and sub-directories that are not in source directory tree          
 def file_desync(target_directory, source_directory):
@@ -113,17 +117,21 @@ def file_desync(target_directory, source_directory):
             if os.path.isdir(target) and not os.path.isdir(source):
                 shutil.rmtree(target)
                 print_to_textbox("Directory Deleted: " + target)
+                print_to_textbox("\n")
             elif os.path.isfile(target) and not os.path.isfile(source):
                 os.remove(target)
                 print_to_textbox("File deleted: " + target)
+                print_to_textbox("\n")
             elif os.path.isdir(target):
                 file_desync(target, source)
         except IOError:
             print_to_textbox("IOError, sync failed: " + target)
+            print_to_textbox("\n")
             
 # Main method - Calls file_sync method on source_directory and file_desync method on target_directory       
 def main():
 
+    global separator
     clear_textbox()
 
     source_directory = str(source_directory_path.get())
@@ -131,11 +139,14 @@ def main():
 
     start_time = datetime.datetime.now()
     print_to_textbox("File Sync start: " + str(start_time))
+    print_to_textbox("\n")
     
     print_to_textbox("Desyncing files from target to source.....")
+    print_to_textbox(separator)
     file_desync(target_directory, source_directory)
 
     print_to_textbox("Syncing files from source to target.....")
+    print_to_textbox(separator)
     file_sync(source_directory, target_directory)
 
     end_time = datetime.datetime.now()
@@ -144,6 +155,7 @@ def main():
 ### Configure GUI
 root = Tk()
 root.title("FileSyncer")
+separator = "-------------------------------------------------\n"
 
 # Add menu bar
 menubar = Menu(root)
