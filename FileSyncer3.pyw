@@ -1,6 +1,3 @@
-# Author: Matthew Gray
-# Copyright (C) 2017 Matthew Gray
-# Last Modified: 12/12/2017
 # file_syncer.py - Recursively crawls a source directory tree and syncs the contents of each sub-directory and file with a target directory tree
 
 import datetime
@@ -9,8 +6,16 @@ import glob
 import os
 import shutil
 import threading
-from tkinter import *
-import tkFileDialog 
+from tkinter import Tk
+from tkinter import Menu
+from tkinter import StringVar
+from tkinter import Text
+from tkinter import Toplevel
+from tkinter import ACTIVE
+from tkinter import END
+from tkinter.ttk import Button
+from tkinter.ttk import Label
+from tkinter import filedialog
 
 # Starts new thread using input function as thread target
 def start_thread(function):
@@ -39,10 +44,11 @@ def center_popup(toplevel):
 def about_popup():
     
     global separator
-    title_message = "FileSycer\n"
+    title_message = "FileSyncer3\n"
     copyright_message = "Copyright (C) 2017 Matthew Gray\n"
+    copyright_message2 = "Copyright (C) 2018 Nguyen Dev\n"
     description_message = "Description: Recursively crawls a source directory\n tree and syncs the contents of each subdirectory\n and file with a target directory tree."
-    about_message = title_message + separator+ copyright_message + separator + description_message
+    about_message = title_message + separator+ copyright_message + copyright_message2 + separator + description_message
     
     toplevel = Toplevel(padx=5, pady=5, takefocus=True)
     toplevel.wm_title("About")
@@ -77,7 +83,7 @@ def browse_directory(directory_type):
     global source_directory_path
     global target_directory_path
     global sync_file_button
-    directory_path = tkFileDialog.askdirectory()
+    directory_path = filedialog.askdirectory()
     if directory_type == "SOURCE":
         source_directory_path.set(directory_path)
     elif directory_type == "TARGET":
@@ -163,7 +169,7 @@ filemenu = Menu(menubar, tearoff=0)
 filemenu.add_command(label="About", command=about_popup)
 filemenu.add_separator()
 filemenu.add_command(label="Exit", command=root.destroy)
-menubar.add_cascade(label="File", menu=filemenu)
+menubar.add_cascade(label="Commands", menu=filemenu)
 
 # String variable used to hold source directory path
 source_directory_path = StringVar()
@@ -189,7 +195,7 @@ target_directory_label.grid(row=4, column=3)
 
 # Sync Files button - Starts file sync process by calling main method with new thread. Button is only activated after Source Directory and Target Directory
 # paths have been selected to sync
-sync_file_button = Button(text="Sync Files", state=DISABLED, command=confirm_popup)
+sync_file_button = Button(text="Sync Files", command=confirm_popup)
 sync_file_button.grid(row=9, column=3)
 
 # Displays messages to application user                 
@@ -209,4 +215,4 @@ y = (root.winfo_screenheight() - h) / 2
 root.geometry("%dx%d+%d+%d" % (w, h, x, y))
 
 # Tkinter application main loop
-mainloop()
+root.mainloop()
