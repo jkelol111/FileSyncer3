@@ -5,84 +5,67 @@ import filecmp
 import glob
 import os
 import shutil
-import threading
+from yaml import dump as ymldumper
+from yaml import load as ymlloader
+from threading import Thread
 from tkinter import Tk
 from tkinter import Menu
 from tkinter import StringVar
 from tkinter import Text
-from tkinter import Toplevel
+from tkinter import scrolledtext
+from tkinter import messagebox
 from tkinter import ACTIVE
 from tkinter import END
+from tkinter import DISABLED
+from tkinter import NORMAL
 from tkinter.ttk import Button
 from tkinter.ttk import Label
+from tkinter.ttk import Progressbar
 from tkinter import filedialog
 
 # Starts new thread using input function as thread target
 def start_thread(function):
-    t = threading.Thread(target=function)
+    t = Thread(target=function)
     t.start()
 
 # Print message to FileSyncer application message box    
 def print_to_textbox(message):
-    message_box.insert(END, message + "\n")
+    message_box.insert(END, "\n"+ message + "\n")
 
 # Clear FileSyncer application message box    
 def clear_textbox():
     message_box.delete('1.0', END)
 
-# Center popup box relative to root    
-def center_popup(toplevel):
-    root.update_idletasks()
-    toplevel.update_idletasks()
-    w = toplevel.winfo_width()
-    h = toplevel.winfo_height()
-    x = root.winfo_width()/2 + root.winfo_x()-132
-    y = root.winfo_height()/2 + root.winfo_y()-55
-    toplevel.geometry("%dx%d+%d+%d" % (w, h, x, y))
+#Method to disable/reenable closing of the root form after sync is started
+def noclosingwindows():
+    pass
+def yesclosingwindows():
+    exit()
   
 # About popup
 def about_popup():
-    
+
     global separator
     title_message = "FileSyncer3\n"
-    copyright_message = "Copyright (C) 2017 Matthew Gray\n"
+    copyright_message = "Copyright (C) 2017-2018 Matthew Gray\n"
     copyright_message2 = "Copyright (C) 2018 Nguyen Dev\n"
     description_message = "Description: Recursively crawls a source directory\n tree and syncs the contents of each subdirectory\n and file with a target directory tree."
     about_message = title_message + separator+ copyright_message + copyright_message2 + separator + description_message
     
-    toplevel = Toplevel(padx=5, pady=5, takefocus=True)
-    toplevel.wm_title("About")
-    label = Label(toplevel, text=about_message)
-    label.grid(row=0, column=2)
-    center_popup(toplevel)
-    toplevel.grab_set()
+    messagebox.showinfo("About FileSyncer3", about_message)
 
 # Confirm sync popup
 def confirm_popup():
     
-    confirm_message = "Are you sure you want to sync these folders?"
-    
-    toplevel = Toplevel(padx=5, pady=5, takefocus=True)
-    toplevel.wm_title("Confirm Sync")
-    label = Label(toplevel, text=confirm_message)
-    label.grid(row=0, column=1)
-    yes_button = Button(master=toplevel, text="Yes", command=lambda: confirm_sync(toplevel))
-    yes_button.grid(row=2, column=1)
-    no_button = Button(master=toplevel, text="No", command=toplevel.destroy)
-    no_button.grid(row=3, column=1)
-    center_popup(toplevel)
-    toplevel.grab_set()
-
-# Starts main thread after confirm button clicked
-def confirm_sync(toplevel):
-    toplevel.destroy()
-    start_thread(main)
+    result = messagebox.askyesno("Confirm Sync", "Are you sure you want to sync these folders?\nAny files currently present will be deleted!")
+    if result == True:
+        start_thread(main)
+        progress_bar.start()
+    if result == False:
+        messagebox.showwarning("Sync Cancelled", "The sync process was terminated.")
     
 # Stores the path of a user selected directory to a variable
 def browse_directory(directory_type):
-    global source_directory_path
-    global target_directory_path
-    global sync_file_button
     directory_path = filedialog.askdirectory()
     if directory_type == "SOURCE":
         source_directory_path.set(directory_path)
@@ -92,7 +75,7 @@ def browse_directory(directory_type):
         source_directory_exists = os.path.exists(source_directory_path.get()) and os.path.isdir(source_directory_path.get())
         target_directory_exists = os.path.exists(target_directory_path.get()) and os.path.isdir(target_directory_path.get())
         if source_directory_exists and target_directory_exists:
-            sync_file_button.config(state=ACTIVE)
+            sync_file_button.configure(state=NORMAL)
 
 # Recursively crawls source directory tree and syncs files and sub-directories with target directory tree        
 def file_sync(source_directory, target_directory):
@@ -105,15 +88,13 @@ def file_sync(source_directory, target_directory):
                 else:
                     shutil.copytree(source, target)
                     print_to_textbox("Directory synced: " + target)
-                    print_to_textbox("\n")
             elif os.path.isfile(source):
                 if not os.path.isfile(target) or (os.path.isfile(target) and not filecmp.cmp(source, target, shallow=True)):              
                     shutil.copy(source, target)
                     print_to_textbox("File synced: " + target)
-                    print_to_textbox("\n")
         except IOError:
             print_to_textbox("IOError, sync failed: " + target)
-            print_to_textbox("\n")
+            messagebox.showerror("Sync failed!", "During the sync, an IOError occured. Your files might be corrupted.")
 
 # Recursively crawls target directory tree and deletes files and sub-directories that are not in source directory tree          
 def file_desync(target_directory, source_directory):
@@ -123,20 +104,120 @@ def file_desync(target_directory, source_directory):
             if os.path.isdir(target) and not os.path.isdir(source):
                 shutil.rmtree(target)
                 print_to_textbox("Directory Deleted: " + target)
-                print_to_textbox("\n")
             elif os.path.isfile(target) and not os.path.isfile(source):
                 os.remove(target)
                 print_to_textbox("File deleted: " + target)
-                print_to_textbox("\n")
             elif os.path.isdir(target):
                 file_desync(target, source)
         except IOError:
             print_to_textbox("IOError, sync failed: " + target)
-            print_to_textbox("\n")
+            messagebox.showerror("Desync failed!", "During the desync, an IOError occured. Your files might be corrupted.")
             
+def update_app():
+    try:
+        progress_bar.start()
+        root.protocol("WM_DELETE_WINDOW", noclosingwindows)
+        source_directory_button.configure(state=DISABLED)
+        target_directory_button.configure(state=DISABLED)
+        sync_file_button.configure(state=DISABLED)
+        clear_textbox()
+        start_time = datetime.datetime.now()
+        print_to_textbox("App Update start: " + str(start_time))
+        print_to_textbox("Updating the app, please wait...")
+        print_to_textbox(separator)
+        import updater
+        updater.updateNow()
+        print_to_textbox("Update completed successfully!")
+        print_to_textbox(separator)
+        source_directory_button.configure(state=NORMAL)
+        target_directory_button.configure(state=NORMAL)
+        sync_file_button.configure(state=NORMAL)
+        root.protocol("WM_DELETE_WINDOW", yesclosingwindows)
+        end_time = datetime.datetime.now()
+        print_to_textbox("App Update took: " + str(end_time - start_time) + " to finish")
+        progress_bar.stop()
+        messagebox.showinfo("Update successful!", "The update was successful. The app will now restart to complete the update.")
+    except Exception as e:
+        progress_bar.stop()
+        source_directory_button.configure(state=NORMAL)
+        target_directory_button.configure(state=NORMAL)
+        sync_file_button.configure(state=NORMAL)
+        print_to_textbox("Update failed because of: "+str(e))
+        messagebox.showerror("Update Failed!", "During the update, an exception happened:\n"+str(e))
+
+#Reads a user configuration file and applies it to the program
+def load_cfg():
+    try:
+        config_dir = filedialog.askopenfilename()
+        if not config_dir.endswith('.synceryml'):
+            messagebox.showerror("Wrong File selected", "Filetype must be a .synceryml (YAML file). Please select again.")
+        else:
+            progress_bar.start()
+            root.protocol("WM_DELETE_WINDOW", noclosingwindows)
+            source_directory_button.configure(state=DISABLED)
+            target_directory_button.configure(state=DISABLED)
+            sync_file_button.configure(state=DISABLED)
+            with open(config_dir, 'r') as config_file:
+                config_contents = ymlloader(config_file)
+            localDir = config_contents["localDir"]
+            externalDir = config_contents["externalDir"]
+            source_directory_path.set(localDir)
+            target_directory_path.set(externalDir)
+            sync_file_button.configure(state=NORMAL)
+            print_to_textbox("Initialized variables with .synceryml file.")
+            print_to_textbox(separator)
+            source_directory_button.configure(state=NORMAL)
+            target_directory_button.configure(state=NORMAL)
+            sync_file_button.configure(state=NORMAL)
+            root.protocol("WM_DELETE_WINDOW", yesclosingwindows)
+            progress_bar.stop()
+    except Exception as e:
+        print(str(e))
+
+#Makes a user configuration file
+def make_cfg():
+    try:
+        if source_directory_path.get() == "" or target_directory_path.get() == "":
+            messagebox.showwarning("Not Enough Info!", "Select your paths using the buttons below first, then try again.")
+        else:
+            progress_bar.start()
+            root.protocol("WM_DELETE_WINDOW", noclosingwindows)
+            source_directory_button.configure(state=DISABLED)
+            target_directory_button.configure(state=DISABLED)
+            sync_file_button.configure(state=DISABLED)
+            config_dir = filedialog.askdirectory()
+            clear_textbox()
+            start_time = datetime.datetime.now()
+            print_to_textbox("Config make start: " + str(start_time))
+            print_to_textbox("Making the config, please wait...")
+            print_to_textbox(separator)
+            real_config_dir = config_dir+"/syncconfig.synceryml"
+            config_contents = dict(
+                localDir = source_directory_path.get(),
+                externalDir = target_directory_path.get()
+            )
+            with open(real_config_dir, 'w') as config_file:
+                ymldumper(config_contents, config_file)
+            print_to_textbox("Config make completed successfully!")
+            end_time = datetime.datetime.now()
+            print_to_textbox("Config make took: " + str(end_time - start_time) + " to finish")
+            source_directory_button.configure(state=NORMAL)
+            target_directory_button.configure(state=NORMAL)
+            sync_file_button.configure(state=NORMAL)
+            root.protocol("WM_DELETE_WINDOW", yesclosingwindows)
+            progress_bar.stop()
+            messagebox.showinfo("Make config success!", "Your configuration file has been selected. You can now select it from the menus above.")
+    except IOError:
+        progress_bar.stop()
+        print_to_textbox("IOError, make config failed!")
+        messagebox.showerror("Make config failed!", "During the making of config, an IOError occured. Your files might be corrupted.")
+
 # Main method - Calls file_sync method on source_directory and file_desync method on target_directory       
 def main():
-
+    root.protocol("WM_DELETE_WINDOW", noclosingwindows)
+    source_directory_button.configure(state=DISABLED)
+    target_directory_button.configure(state=DISABLED)
+    sync_file_button.configure(state=DISABLED)
     global separator
     clear_textbox()
 
@@ -145,7 +226,6 @@ def main():
 
     start_time = datetime.datetime.now()
     print_to_textbox("File Sync start: " + str(start_time))
-    print_to_textbox("\n")
     
     print_to_textbox("Desyncing files from target to source.....")
     print_to_textbox(separator)
@@ -157,19 +237,38 @@ def main():
 
     end_time = datetime.datetime.now()
     print_to_textbox("File Sync took: " + str(end_time - start_time) + " to finish")
+    source_directory_button.configure(state=NORMAL)
+    target_directory_button.configure(state=NORMAL)
+    sync_file_button.configure(state=NORMAL)
+    root.protocol("WM_DELETE_WINDOW", yesclosingwindows)
+    progress_bar.stop()
+    messagebox.showinfo("Sync Successful!", "The sync has been completed in "+str(end_time - start_time))
+    
 
 ### Configure GUI
 root = Tk()
-root.title("FileSyncer")
+root.wm_resizable(False, False)
+root.title("FileSyncer3")
 separator = "-------------------------------------------------\n"
 
 # Add menu bar
 menubar = Menu(root)
 filemenu = Menu(menubar, tearoff=0)
-filemenu.add_command(label="About", command=about_popup)
+filemenu.add_command(label="Use config file...", command=lambda: start_thread(load_cfg))
+filemenu.add_command(label="Make config file...", command=lambda: start_thread(make_cfg))
+filemenu.add_command(label="Quit", command=exit)
 filemenu.add_separator()
-filemenu.add_command(label="Exit", command=root.destroy)
-menubar.add_cascade(label="Commands", menu=filemenu)
+filemenu.add_checkbutton(label="New UI preview (N/A)")
+filemenu.add_separator()
+filemenu.add_command(label="Check for updates...", command=lambda: start_thread(update_app))
+menubar.add_cascade(label="File & options", menu=filemenu)
+
+aboutmenu = Menu(menubar, tearoff=0)
+aboutmenu.add_command(label="Instructions...")
+aboutmenu.add_command(label="About...", command=about_popup)
+aboutmenu.add_separator()
+aboutmenu.add_command(label="Send feedback to developer", command=root.destroy)
+menubar.add_cascade(label="Help & feedback", menu=aboutmenu)
 
 # String variable used to hold source directory path
 source_directory_path = StringVar()
@@ -196,11 +295,19 @@ target_directory_label.grid(row=4, column=3)
 # Sync Files button - Starts file sync process by calling main method with new thread. Button is only activated after Source Directory and Target Directory
 # paths have been selected to sync
 sync_file_button = Button(text="Sync Files", command=confirm_popup)
+sync_file_button.configure(state=DISABLED)
 sync_file_button.grid(row=9, column=3)
 
 # Displays messages to application user                 
-message_box = Text(master=root)
+message_box = scrolledtext.ScrolledText(master=root)
 message_box.grid(row=11, column=3)
+print_to_textbox("Welcome to FileSyncer3! Please read the instructions in the 'Help & feedback' menu above before using this application.")
+print_to_textbox("For support, click the 'Send feedback to developer' option in the 'Help & feedback' menu.")
+print_to_textbox(separator)
+
+progress_bar = Progressbar(root, orient="horizontal", length=250, mode="indeterminate")
+progress_bar.grid(row=13, column=3)
+progress_bar.stop()
 
 # Set menubar object as root menu
 root.config(menu=menubar)
