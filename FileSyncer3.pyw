@@ -1,6 +1,7 @@
 # file_syncer.py - Recursively crawls a source directory tree and syncs the contents of each sub-directory and file with a target directory tree
 
 import datetime
+import webbrowser
 from filecmp import cmp
 from glob import glob
 from os.path import exists
@@ -47,7 +48,23 @@ def noclosingwindows():
     pass
 def yesclosingwindows():
     exit()
-  
+
+#Disables the button controls during sync actions
+def disableInputs():
+    root.protocol("WM_DELETE_WINDOW", noclosingwindows)
+    source_directory_button.configure(state=DISABLED)
+    target_directory_button.configure(state=DISABLED)
+    sync_file_button.configure(state=DISABLED)
+    menubar.entryconfig("File & options", state=DISABLED)
+
+#Enables the button controls during sync actions
+def enableInputs():
+    root.protocol("WM_DELETE_WINDOW", noclosingwindows)
+    source_directory_button.configure(state=NORMAL)
+    target_directory_button.configure(state=NORMAL)
+    sync_file_button.configure(state=NORMAL)
+    menubar.entryconfig("File & options", state=NORMAL)
+
 # About popup
 def about_popup():
 
@@ -122,10 +139,7 @@ def file_desync(target_directory, source_directory):
 def update_app():
     try:
         progress_bar.start()
-        root.protocol("WM_DELETE_WINDOW", noclosingwindows)
-        source_directory_button.configure(state=DISABLED)
-        target_directory_button.configure(state=DISABLED)
-        sync_file_button.configure(state=DISABLED)
+        disableInputs()
         clear_textbox()
         start_time = datetime.datetime.now()
         print_to_textbox("App Update start: " + str(start_time))
@@ -135,19 +149,14 @@ def update_app():
         updater.updateNow()
         print_to_textbox("Update completed successfully!")
         print_to_textbox(separator)
-        source_directory_button.configure(state=NORMAL)
-        target_directory_button.configure(state=NORMAL)
-        sync_file_button.configure(state=NORMAL)
-        root.protocol("WM_DELETE_WINDOW", yesclosingwindows)
+        enableInputs()
         end_time = datetime.datetime.now()
         print_to_textbox("App Update took: " + str(end_time - start_time) + " to finish")
         progress_bar.stop()
         messagebox.showinfo("Update successful!", "The update was successful. The app will now restart to complete the update.")
     except Exception as e:
         progress_bar.stop()
-        source_directory_button.configure(state=NORMAL)
-        target_directory_button.configure(state=NORMAL)
-        sync_file_button.configure(state=NORMAL)
+        enableInputs()
         print_to_textbox("Update failed because of: "+str(e))
         messagebox.showerror("Update Failed!", "During the update, an exception happened:\n"+str(e))
 
@@ -155,30 +164,26 @@ def update_app():
 def load_cfg():
     try:
         config_dir = filedialog.askopenfilename(parent=root, filetypes=[("FileSyncer3 configuration", "*.synceryml")])
-        if not config_dir.endswith('.synceryml'):
-            messagebox.showerror("Wrong File selected", "Filetype must be a .synceryml (YAML file). Please select again.")
+        if config_dir == "":
+            messagebox.showerror("Nothing selected", "Filetype must be a .synceryml (YAML file). Please select again.")
         else:
             progress_bar.start()
-            root.protocol("WM_DELETE_WINDOW", noclosingwindows)
-            source_directory_button.configure(state=DISABLED)
-            target_directory_button.configure(state=DISABLED)
-            sync_file_button.configure(state=DISABLED)
+            disableInputs()
             with open(config_dir, 'r') as config_file:
                 config_contents = ymlloader(config_file)
             localDir = config_contents["localDir"]
             externalDir = config_contents["externalDir"]
             source_directory_path.set(localDir)
             target_directory_path.set(externalDir)
-            sync_file_button.configure(state=NORMAL)
             print_to_textbox("Initialized variables with .synceryml file.")
             print_to_textbox(separator)
-            source_directory_button.configure(state=NORMAL)
-            target_directory_button.configure(state=NORMAL)
-            sync_file_button.configure(state=NORMAL)
-            root.protocol("WM_DELETE_WINDOW", yesclosingwindows)
+            enableInputs()
             progress_bar.stop()
     except Exception as e:
-        print(str(e))
+        progress_bar.stop()
+        enableInputs()
+        print_to_textbox("Load from config failed because of: "+str(e))
+        messagebox.showerror("")
 
 #Makes a user configuration file
 def make_cfg():
@@ -186,49 +191,40 @@ def make_cfg():
         if source_directory_path.get() == "" or target_directory_path.get() == "":
             messagebox.showwarning("Not Enough Info!", "Select your paths using the buttons below first, then try again.")
         else:
-            root.protocol("WM_DELETE_WINDOW", noclosingwindows)
-            source_directory_button.configure(state=DISABLED)
-            target_directory_button.configure(state=DISABLED)
-            sync_file_button.configure(state=DISABLED)
+            disableInputs()
             config_dir = filedialog.asksaveasfilename(filetypes=[("FileSyncer3 configuration", "*.synceryml")])
-            real_config_dir = config_dir+".synceryml"
-            progress_bar.start()
-            clear_textbox()
-            start_time = datetime.datetime.now()
-            print_to_textbox("Config make start: " + str(start_time))
-            print_to_textbox("Making the config, please wait...")
-            print_to_textbox(separator)
-            config_contents = dict(
-                localDir = source_directory_path.get(),
-                externalDir = target_directory_path.get()
-            )
-            with open(real_config_dir, 'w') as config_file:
-                ymldumper(config_contents, config_file)
-            print_to_textbox("Config make completed successfully!")
-            end_time = datetime.datetime.now()
-            print_to_textbox("Config make took: " + str(end_time - start_time) + " to finish")
-            source_directory_button.configure(state=NORMAL)
-            target_directory_button.configure(state=NORMAL)
-            sync_file_button.configure(state=NORMAL)
-            root.protocol("WM_DELETE_WINDOW", yesclosingwindows)
-            progress_bar.stop()
-            messagebox.showinfo("Make config success!", "Your configuration file has been created. You can now select it from the menus above.")
+            if config_dir == "":
+                messagebox.showerror("Make config cancelled", "Filetype must be a .synceryml (YAML file). Please select again.")
+                enableInputs()
+            else:
+                real_config_dir = config_dir+".synceryml"
+                progress_bar.start()
+                clear_textbox()
+                start_time = datetime.datetime.now()
+                print_to_textbox("Config make start: " + str(start_time))
+                print_to_textbox("Making the config, please wait...")
+                print_to_textbox(separator)
+                config_contents = dict(
+                    localDir = source_directory_path.get(),
+                    externalDir = target_directory_path.get()
+                )
+                with open(real_config_dir, 'w') as config_file:
+                    ymldumper(config_contents, config_file)
+                print_to_textbox("Config make completed successfully!")
+                end_time = datetime.datetime.now()
+                print_to_textbox("Config make took: " + str(end_time - start_time) + " to finish")
+                enableInputs()
+                progress_bar.stop()
+                messagebox.showinfo("Make config success!", "Your configuration file has been created. You can now select it from the menus above.")
     except IOError:
         progress_bar.stop()
-        source_directory_button.configure(state=NORMAL)
-        target_directory_button.configure(state=NORMAL)
-        sync_file_button.configure(state=NORMAL)
-        root.protocol("WM_DELETE_WINDOW", yesclosingwindows)
+        enableInputs()
         print_to_textbox("IOError, make config failed!")
         messagebox.showerror("Make config failed!", "During the making of config, an IOError occured. Your files might be corrupted.")
 
 # Main method - Calls file_sync method on source_directory and file_desync method on target_directory       
 def main():
-    root.protocol("WM_DELETE_WINDOW", noclosingwindows)
-    source_directory_button.configure(state=DISABLED)
-    target_directory_button.configure(state=DISABLED)
-    sync_file_button.configure(state=DISABLED)
-    global separator
+    disableInputs()
     clear_textbox()
 
     source_directory = str(source_directory_path.get())
@@ -247,10 +243,7 @@ def main():
 
     end_time = datetime.datetime.now()
     print_to_textbox("File Sync took: " + str(end_time - start_time) + " to finish")
-    source_directory_button.configure(state=NORMAL)
-    target_directory_button.configure(state=NORMAL)
-    sync_file_button.configure(state=NORMAL)
-    root.protocol("WM_DELETE_WINDOW", yesclosingwindows)
+    enableInputs()
     progress_bar.stop()
     messagebox.showinfo("Sync Successful!", "The sync has been completed in "+str(end_time - start_time))
     
@@ -279,7 +272,7 @@ aboutmenu = Menu(menubar, tearoff=0)
 aboutmenu.add_command(label="Instructions...")
 aboutmenu.add_command(label="About...", command=about_popup)
 aboutmenu.add_separator()
-aboutmenu.add_command(label="Send feedback to developer", command=root.destroy)
+aboutmenu.add_command(label="Send feedback to developer", command=lambda: webbrowser.open("mailto:?to=vietbetatester@outlook.com&subject=Problem with FileSyncer3"))
 menubar.add_cascade(label="Help & feedback", menu=aboutmenu)
 
 # String variable used to hold source directory path
