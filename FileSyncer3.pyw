@@ -1,10 +1,17 @@
 # file_syncer.py - Recursively crawls a source directory tree and syncs the contents of each sub-directory and file with a target directory tree
 
 import datetime
-import filecmp
-import glob
-import os
-import shutil
+from filecmp import cmp
+from glob import glob
+from os.path import exists
+from os.path import isdir
+from os.path import join
+from os.path import isfile
+from os.path import dirname
+from os.path import realpath
+from shutil import copytree
+from shutil import copy2
+from shutil import rmtree
 from yaml import dump as ymldumper
 from yaml import load as ymlloader
 from threading import Thread
@@ -14,8 +21,6 @@ from tkinter import StringVar
 from tkinter import Text
 from tkinter import scrolledtext
 from tkinter import messagebox
-from tkinter import simpledialog
-from tkinter import ACTIVE
 from tkinter import END
 from tkinter import DISABLED
 from tkinter import NORMAL
@@ -73,25 +78,25 @@ def browse_directory(directory_type):
     elif directory_type == "TARGET":
         target_directory_path.set(directory_path)
     if len(source_directory_path.get()) > 0 and len(target_directory_path.get()) > 0:
-        source_directory_exists = os.path.exists(source_directory_path.get()) and os.path.isdir(source_directory_path.get())
-        target_directory_exists = os.path.exists(target_directory_path.get()) and os.path.isdir(target_directory_path.get())
+        source_directory_exists = exists(source_directory_path.get()) and isdir(source_directory_path.get())
+        target_directory_exists = exists(target_directory_path.get()) and isdir(target_directory_path.get())
         if source_directory_exists and target_directory_exists:
             sync_file_button.configure(state=NORMAL)
 
 # Recursively crawls source directory tree and syncs files and sub-directories with target directory tree        
 def file_sync(source_directory, target_directory):
-    for source in glob.glob(os.path.join(source_directory, "*")):
+    for source in glob(join(source_directory, "*")):
         target = source.replace(source_directory, target_directory)
         try:
-            if os.path.isdir(source):            
-                if os.path.isdir(target):
+            if isdir(source):            
+                if isdir(target):
                     file_sync(source, target)
                 else:
-                    shutil.copytree(source, target)
+                    copytree(source, target)
                     print_to_textbox("Directory synced: " + target)
-            elif os.path.isfile(source):
-                if not os.path.isfile(target) or (os.path.isfile(target) and not filecmp.cmp(source, target, shallow=True)):              
-                    shutil.copy(source, target)
+            elif isfile(source):
+                if not isfile(target) or (isfile(target) and not cmp(source, target, shallow=True)):              
+                    copy2(source, target)
                     print_to_textbox("File synced: " + target)
         except IOError:
             print_to_textbox("IOError, sync failed: " + target)
@@ -99,16 +104,16 @@ def file_sync(source_directory, target_directory):
 
 # Recursively crawls target directory tree and deletes files and sub-directories that are not in source directory tree          
 def file_desync(target_directory, source_directory):
-    for target in glob.glob(os.path.join(target_directory, "*")):
+    for target in glob(join(target_directory, "*")):
         source = target.replace(target_directory, source_directory)
         try:
-            if os.path.isdir(target) and not os.path.isdir(source):
-                shutil.rmtree(target)
+            if isdir(target) and not isdir(source):
+                rmtree(target)
                 print_to_textbox("Directory Deleted: " + target)
-            elif os.path.isfile(target) and not os.path.isfile(source):
+            elif isfile(target) and not isfile(source):
                 os.remove(target)
                 print_to_textbox("File deleted: " + target)
-            elif os.path.isdir(target):
+            elif isdir(target):
                 file_desync(target, source)
         except IOError:
             print_to_textbox("IOError, sync failed: " + target)
@@ -149,7 +154,7 @@ def update_app():
 #Reads a user configuration file and applies it to the program
 def load_cfg():
     try:
-        config_dir = filedialog.askopenfilename(parent=root, filetypes=[("FileSyncer3 configururation", "*.synceryml")])
+        config_dir = filedialog.askopenfilename(parent=root, filetypes=[("FileSyncer3 configuration", "*.synceryml")])
         if not config_dir.endswith('.synceryml'):
             messagebox.showerror("Wrong File selected", "Filetype must be a .synceryml (YAML file). Please select again.")
         else:
@@ -186,6 +191,7 @@ def make_cfg():
             target_directory_button.configure(state=DISABLED)
             sync_file_button.configure(state=DISABLED)
             config_dir = filedialog.asksaveasfilename(filetypes=[("FileSyncer3 configuration", "*.synceryml")])
+            real_config_dir = config_dir+".synceryml"
             progress_bar.start()
             clear_textbox()
             start_time = datetime.datetime.now()
@@ -196,7 +202,6 @@ def make_cfg():
                 localDir = source_directory_path.get(),
                 externalDir = target_directory_path.get()
             )
-            real_config_dir = config_dir+".synceryml"
             with open(real_config_dir, 'w') as config_file:
                 ymldumper(config_contents, config_file)
             print_to_textbox("Config make completed successfully!")
@@ -254,6 +259,7 @@ def main():
 root = Tk()
 root.wm_resizable(False, False)
 root.title("FileSyncer3")
+root.iconbitmap(join(dirname(realpath(__file__)), "icon.ico"))
 separator = "-------------------------------------------------\n"
 
 # Add menu bar
