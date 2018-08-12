@@ -14,6 +14,7 @@ from tkinter import StringVar
 from tkinter import Text
 from tkinter import scrolledtext
 from tkinter import messagebox
+from tkinter import simpledialog
 from tkinter import ACTIVE
 from tkinter import END
 from tkinter import DISABLED
@@ -148,7 +149,7 @@ def update_app():
 #Reads a user configuration file and applies it to the program
 def load_cfg():
     try:
-        config_dir = filedialog.askopenfilename()
+        config_dir = filedialog.askopenfilename(parent=root, filetypes=[("FileSyncer3 configururation", "*.synceryml")])
         if not config_dir.endswith('.synceryml'):
             messagebox.showerror("Wrong File selected", "Filetype must be a .synceryml (YAML file). Please select again.")
         else:
@@ -180,22 +181,22 @@ def make_cfg():
         if source_directory_path.get() == "" or target_directory_path.get() == "":
             messagebox.showwarning("Not Enough Info!", "Select your paths using the buttons below first, then try again.")
         else:
-            progress_bar.start()
             root.protocol("WM_DELETE_WINDOW", noclosingwindows)
             source_directory_button.configure(state=DISABLED)
             target_directory_button.configure(state=DISABLED)
             sync_file_button.configure(state=DISABLED)
-            config_dir = filedialog.askdirectory()
+            config_dir = filedialog.asksaveasfilename(filetypes=[("FileSyncer3 configuration", "*.synceryml")])
+            progress_bar.start()
             clear_textbox()
             start_time = datetime.datetime.now()
             print_to_textbox("Config make start: " + str(start_time))
             print_to_textbox("Making the config, please wait...")
             print_to_textbox(separator)
-            real_config_dir = config_dir+"/syncconfig.synceryml"
             config_contents = dict(
                 localDir = source_directory_path.get(),
                 externalDir = target_directory_path.get()
             )
+            real_config_dir = config_dir+".synceryml"
             with open(real_config_dir, 'w') as config_file:
                 ymldumper(config_contents, config_file)
             print_to_textbox("Config make completed successfully!")
@@ -206,9 +207,13 @@ def make_cfg():
             sync_file_button.configure(state=NORMAL)
             root.protocol("WM_DELETE_WINDOW", yesclosingwindows)
             progress_bar.stop()
-            messagebox.showinfo("Make config success!", "Your configuration file has been selected. You can now select it from the menus above.")
+            messagebox.showinfo("Make config success!", "Your configuration file has been created. You can now select it from the menus above.")
     except IOError:
         progress_bar.stop()
+        source_directory_button.configure(state=NORMAL)
+        target_directory_button.configure(state=NORMAL)
+        sync_file_button.configure(state=NORMAL)
+        root.protocol("WM_DELETE_WINDOW", yesclosingwindows)
         print_to_textbox("IOError, make config failed!")
         messagebox.showerror("Make config failed!", "During the making of config, an IOError occured. Your files might be corrupted.")
 
@@ -256,6 +261,7 @@ menubar = Menu(root)
 filemenu = Menu(menubar, tearoff=0)
 filemenu.add_command(label="Use config file...", command=lambda: start_thread(load_cfg))
 filemenu.add_command(label="Make config file...", command=lambda: start_thread(make_cfg))
+filemenu.add_command(label="Clear log", command=clear_textbox)
 filemenu.add_command(label="Quit", command=exit)
 filemenu.add_separator()
 filemenu.add_checkbutton(label="New UI preview (N/A)")
