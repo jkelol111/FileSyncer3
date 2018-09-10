@@ -5,17 +5,21 @@ import webbrowser
 from filecmp import cmp
 from glob import glob
 from sys import exit
+from sys import executable
+from sys import argv
+from os import execl
 from os.path import exists
 from os.path import isdir
 from os.path import join
 from os.path import isfile
 from os.path import dirname
 from os.path import realpath
+from os.path import abspath
 from shutil import copytree
 from shutil import copy2
 from shutil import rmtree
 from yaml import dump as ymldumper
-from yaml import load as ymlloader
+from yaml import safe_load as ymlloader
 from threading import Thread
 from tkinter import Tk
 from tkinter import Menu
@@ -147,7 +151,9 @@ def update_app():
         print_to_textbox("Updating the app, please wait...")
         print_to_textbox(separator)
         import updater
-        updater.updateNow()
+        updater.configureConfigNow("me.jkelol111.filesyncer3", "https://github.com/jkelol111/FileSyncer3.git", dirname(realpath(__file__)), "FileSyncer3.pyw", True, True)
+        updater.updateNow(None)
+        execl(executable, abspath(__file__), *argv) 
         print_to_textbox("Update completed successfully!")
         print_to_textbox(separator)
         enableInputs()
@@ -155,6 +161,7 @@ def update_app():
         print_to_textbox("App Update took: " + str(end_time - start_time) + " to finish")
         progress_bar.stop()
         messagebox.showinfo("Update successful!", "The update was successful. The app will now restart to complete the update.")
+        execl(executable, abspath(__file__), *argv) 
     except Exception as e:
         progress_bar.stop()
         enableInputs()
@@ -263,8 +270,6 @@ filemenu.add_command(label="Use config file...", command=lambda: start_thread(lo
 filemenu.add_command(label="Make config file...", command=lambda: start_thread(make_cfg))
 filemenu.add_command(label="Clear log", command=clear_textbox)
 filemenu.add_command(label="Quit", command=exit)
-filemenu.add_separator()
-filemenu.add_checkbutton(label="New UI preview (N/A)")
 filemenu.add_separator()
 filemenu.add_command(label="Check for updates...", command=lambda: start_thread(update_app))
 menubar.add_cascade(label="File & options", menu=filemenu)
