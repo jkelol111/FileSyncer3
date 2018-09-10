@@ -8,7 +8,7 @@ To run:
 
 1. Get dependencies via pip: `pip3 install -U PyYaml`
 
-2. Get `updater.py` here: https://github.com/jkelol111/FileSyncer3 (clone the repository to the app directory)
+2. Get `updater.py` here: https://github.com/jkelol111/updater.py (clone the repository to the app directory)
 
 2. Run using: `python3 dir/to/the/file/FileSyncer3.pyw`
 
