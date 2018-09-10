@@ -64,7 +64,7 @@ def disableInputs():
 
 #Enables the button controls during sync actions
 def enableInputs():
-    root.protocol("WM_DELETE_WINDOW", noclosingwindows)
+    root.protocol("WM_DELETE_WINDOW", yesclosingwindows)
     source_directory_button.configure(state=NORMAL)
     target_directory_button.configure(state=NORMAL)
     sync_file_button.configure(state=NORMAL)
