@@ -1,0 +1,2 @@
+{appDir: 'Nothing', appExecName: FileSyncer3.pyw, appIdentifier: me.jkelol111.filesyncer3,
+  appRepo: 'https://github.com/jkelol111/FileSyncer3.git', backupOn: true, createLaunchScriptOn: true}
