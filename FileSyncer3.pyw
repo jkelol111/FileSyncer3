@@ -1,9 +1,10 @@
-# file_syncer.py - Recursively crawls a source directory tree and syncs the contents of each sub-directory and file with a target directory tree
+# FileSyncer3.py - Recursively crawls a source directory tree and syncs the contents of each sub-directory and file with a target directory tree
 
 import datetime
 import webbrowser
 from filecmp import cmp
 from glob import glob
+from sys import exit
 from os.path import exists
 from os.path import isdir
 from os.path import join
