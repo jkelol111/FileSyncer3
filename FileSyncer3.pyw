@@ -332,5 +332,16 @@ x = (root.winfo_screenwidth() - w) / 2
 y = (root.winfo_screenheight() - h) / 2
 root.geometry("%dx%d+%d+%d" % (w, h, x, y))
 
+#Auto-detect "default.synceryml" in the same directory
+if isfile(dirname(realpath(__file__))+"/default.synceryml"):
+    with open(config_dir, 'r') as config_file:
+        config_contents = ymlloader(config_file)
+    localDir = config_contents["localDir"]
+    externalDir = config_contents["externalDir"]
+    source_directory_path.set(localDir)
+    target_directory_path.set(externalDir)
+    print_to_textbox("Initialized variables with default.synceryml file.")
+    print_to_textbox(separator)
+
 # Tkinter application main loop
 root.mainloop()
