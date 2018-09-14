@@ -342,6 +342,8 @@ if isfile(dirname(realpath(__file__))+"/default.synceryml"):
     target_directory_path.set(externalDir)
     print_to_textbox("Initialized variables with default.synceryml file.")
     print_to_textbox(separator)
+    if source_directory_path and target_directory_path:
+        sync_file_button.configure(state=NORMAL)
 
 # Tkinter application main loop
 root.mainloop()
