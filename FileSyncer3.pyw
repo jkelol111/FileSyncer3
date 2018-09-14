@@ -94,16 +94,18 @@ def confirm_popup():
     
 # Stores the path of a user selected directory to a variable
 def browse_directory(directory_type):
-    directory_path = filedialog.askdirectory()
     if directory_type == "SOURCE":
+        directory_path = filedialog.askdirectory()
         source_directory_path.set(directory_path)
     elif directory_type == "TARGET":
+        directory_path = filedialog.askdirectory()
         target_directory_path.set(directory_path)
-    if len(source_directory_path.get()) > 0 and len(target_directory_path.get()) > 0:
+    if not source_directory_path.get() == "" and target_directory_path.get() == "":
         source_directory_exists = exists(source_directory_path.get()) and isdir(source_directory_path.get())
         target_directory_exists = exists(target_directory_path.get()) and isdir(target_directory_path.get())
         if source_directory_exists and target_directory_exists:
             sync_file_button.configure(state=NORMAL)
+
 
 # Recursively crawls source directory tree and syncs files and sub-directories with target directory tree        
 def file_sync(source_directory, target_directory):
@@ -153,7 +155,6 @@ def update_app():
         import updater
         updater.configureConfigNow("me.jkelol111.filesyncer3", "https://github.com/jkelol111/FileSyncer3.git", dirname(realpath(__file__)), "FileSyncer3.pyw", True, True)
         updater.updateNow(None)
-        execl(executable, abspath(__file__), *argv) 
         print_to_textbox("Update completed successfully!")
         print_to_textbox(separator)
         enableInputs()
