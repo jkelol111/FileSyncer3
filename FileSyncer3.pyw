@@ -334,7 +334,7 @@ root.geometry("%dx%d+%d+%d" % (w, h, x, y))
 
 #Auto-detect "default.synceryml" in the same directory
 if isfile(dirname(realpath(__file__))+"/default.synceryml"):
-    with open(config_dir, 'r') as config_file:
+    with open(dirname(realpath(__file__))+"/default.synceryml", 'r') as config_file:
         config_contents = ymlloader(config_file)
     localDir = config_contents["localDir"]
     externalDir = config_contents["externalDir"]
